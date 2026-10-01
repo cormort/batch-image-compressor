@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>批次圖片容量壓縮工具 - 本地極速版</title>
+<style>
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-alt: #f1f5f9;
+  --border: #e2e8f0;
+  --border-focus: #3b82f6;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-light: #eff6ff;
+  --success: #10b981;
+  --success-bg: #ecfdf5;
+  --success-border: #a7f3d0;
+  --warning: #f59e0b;
+  --warning-bg: #fffbeb;
+  --danger: #ef4444;
+  --danger-bg: #fef2f2;
+  --danger-hover: #dc2626;
+  --radius-xl: 18px;
+  --radius-lg: 14px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 12px 28px -6px rgba(15, 23, 42, 0.1), 0 8px 12px -6px rgba(15, 23, 42, 0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+  background-color: var(--bg);
+  background-image: radial-gradient(at 0% 0%, #eff6ff 0px, transparent 50%), radial-gradient(at 100% 100%, #f0fdf4 0px, transparent 50%);
+  background-attachment: fixed;
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+.wrap {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 32px 20px 60px;
+}
+
+/* Header */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.header-title h1 {
+  font-size: clamp(22px, 3.2vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-title p {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-top: 4px;
+}
+.privacy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--success-bg);
+  color: #065f46;
+  border: 1px solid var(--success-border);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Layout Grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 370px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+/* Common Card */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  padding: 22px;
+  margin-bottom: 20px;
+}
+.card:last-child { margin-bottom: 0; }
+.card-title {
+  font-size: 15px;
+  font-weight: 750;
+  color: var(--text);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Left Sidebar (Sticky Controls) */
+.sidebar {
+  position: sticky;
+  top: 24px;
+}
+
+/* Form Controls */
+.control-group {
+  margin-bottom: 16px;
+}
+.control-group:last-child {
+  margin-bottom: 0;
+}
+.control-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+/* Segmented Chip Presets */
+.chip-group {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  background: var(--surface-alt);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+.chip {
+  border: none;
+  background: transparent;
+  padding: 8px 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+.chip:hover {
+  color: var(--text);
+}
+.chip.active {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Form Inputs */
+.input, .select {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.input:focus, .select:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+.input:disabled, .select:disabled {
+  background: var(--surface-alt);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Custom Size Box */
+.custom-size-row {
+  display: grid;
+  grid-template-columns: 1fr 80px;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Sub-inputs */
+.size-pair {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+.size-pair span {
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.field-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 5px;
+}
+
+/* Switch Items */
+.switch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+}
+.switch-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
+}
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #cbd5e1;
+  transition: .2s;
+  border-radius: 999px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .2s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.switch input:checked + .slider {
+  background-color: var(--primary);
+}
+.switch input:checked + .slider:before {
+  transform: translateX(18px);
+}
+.switch input:disabled + .slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Action Buttons */
+.btn-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 11px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.btn.primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+.btn.primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+.btn.secondary {
+  background: var(--surface-alt);
+  border-color: var(--border);
+  color: #334155;
+}
+.btn.secondary:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: var(--text);
+}
+.btn.danger {
+  background: var(--danger-bg);
+  border-color: #fecaca;
+  color: var(--danger);
+}
+.btn.danger:hover:not(:disabled) {
+  background: #fee2e2;
+  color: var(--danger-hover);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+}
+.btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Drop Zone */
+.dropzone {
+  border: 2px dashed #93c5fd;
+  background: linear-gradient(180deg, #f0f7ff 0%, #ffffff 100%);
+  border-radius: var(--radius-xl);
+  padding: 38px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.dropzone:hover, .dropzone.drag {
+  border-color: var(--primary);
+  background: #eff6ff;
+  transform: scale(1.005);
+}
+.dropzone-icon {
+  font-size: 42px;
+  margin-bottom: 8px;
+  display: inline-block;
+  filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.15));
+}
+.dropzone-title {
+  font-size: 17px;
+  font-weight: 750;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+.dropzone-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.dropzone-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  font-size: 12px;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+/* Stats Overview Bar */
+.stats-banner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-sm);
+}
+.stat-box-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.stat-box-val {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 3px;
+}
+.stat-box-val.saved {
+  color: var(--success);
+}
+
+/* Global Progress */
+.progress-card {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+.progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13.5px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.progress-bar-wrap {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #3b82f6, #6366f1);
+  border-radius: 999px;
+  transition: width 0.15s ease-out;
+}
+
+/* Image List */
+.list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.list-head h2 {
+  font-size: 17px;
+  font-weight: 750;
+}
+.list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.item-card {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.item-card:hover {
+  border-color: #cbd5e1;
+}
+.item-thumb-box {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: repeating-conic-gradient(#f1f5f9 0 25%, #ffffff 0 50%) 0 / 16px 16px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.item-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.item-info {
+  min-width: 0;
+}
+.item-name {
+  font-size: 14px;
+  font-weight: 750;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.item-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+.badge-save {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 750;
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid var(--success-border);
+}
+.item-status-text {
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 4px;
+  color: var(--primary);
+}
+.item-status-text.ok { color: var(--success); }
+.item-status-text.warn { color: var(--warning); }
+.item-status-text.danger { color: var(--danger); }
+.item-progress {
+  height: 5px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 6px;
+  width: 140px;
+}
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-icon {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: #334155;
+  padding: 7px 11px;
+  font-size: 12.5px;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-icon:hover {
+  background: #e2e8f0;
+  color: var(--text);
+}
+.btn-icon.danger {
+  color: var(--danger);
+  border-color: #fee2e2;
+  background: var(--danger-bg);
+}
+.btn-icon.danger:hover {
+  background: #fecaca;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-muted);
+}
+.empty-icon {
+  font-size: 38px;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: 100;
+}
+.modal[hidden] { display: none; }
+.modal-box {
+  width: min(1000px, 100%);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.modal-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-head h3 {
+  font-size: 17px;
+  font-weight: 750;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 75%;
+}
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+.mode-tabs {
+  display: inline-flex;
+  background: var(--surface-alt);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+}
+.tab-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.tab-btn.active {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.preview-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #f8fafc;
+}
+.preview-label-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--surface);
+  font-size: 12.5px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border);
+}
+.preview-img-wrap {
+  height: min(52vh, 480px);
+  background: repeating-conic-gradient(#f1f5f9 0 25%, #ffffff 0 50%) 0 / 20px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.preview-img-wrap img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Slider Overlay Compare */
+.slider-container {
+  position: relative;
+  height: min(55vh, 500px);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: repeating-conic-gradient(#f1f5f9 0 25%, #ffffff 0 50%) 0 / 20px 20px;
+  user-select: none;
+}
+.slider-container img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.slider-after {
+  clip-path: inset(0 50% 0 0);
+}
+.slider-range-bar {
+  margin-top: 14px;
+}
+.slider-range-bar input[type=range] {
+  width: 100%;
+  accent-color: var(--primary);
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .sidebar { position: static; }
+  .stats-banner { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .wrap { padding: 18px 12px 40px; }
+  header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .chip-group { grid-template-columns: repeat(2, 1fr); }
+  .item-card { grid-template-columns: 48px minmax(0, 1fr); }
+  .item-thumb-box { width: 48px; height: 48px; }
+  .item-actions { grid-column: 1 / -1; justify-content: flex-end; }
+  .compare-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <!-- Header -->
+  <header>
+    <div class="header-title">
+      <h1>⚡ 批次圖片容量壓縮工具</h1>
+      <p>精準控制圖片容量在目標值以內，小於目標容量自動保留原檔</p>
+    </div>
+    <div class="privacy-badge">🔒 僅在本機瀏覽器處理 · 不主動上傳</div>
+  </header>
+
+  <div class="dashboard-grid">
+    <!-- Left Column: Controls & Actions -->
+    <aside class="sidebar">
+      <!-- Target Size Card -->
+      <div class="card">
+        <div class="card-title">🎯 壓縮目標設定</div>
+        
+        <div class="control-group">
+          <label class="control-label">每張目標容量上限</label>
+          <div class="chip-group">
+            <button type="button" class="chip active" data-kb="200">200 KB</button>
+            <button type="button" class="chip" data-kb="500">500 KB</button>
+            <button type="button" class="chip" data-kb="1024">1 MB</button>
+            <button type="button" class="chip" data-kb="custom">自訂</button>
+          </div>
+          <div id="customRow" class="custom-size-row" style="display:none;">
+            <input id="customSize" class="input" type="number" min="1" step="1" value="300" placeholder="數值">
+            <select id="customUnit" class="select">
+              <option value="1">KB</option>
+              <option value="1024">MB</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="format">輸出格式偏好</label>
+          <select id="format" class="select">
+            <option value="auto">✨ 自動選擇較小檔案（WebP / JPEG）</option>
+            <option value="image/webp">WebP（通常較小，支援透明背景）</option>
+            <option value="image/jpeg">JPEG（相容性最佳）</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Resolution & Preferences Card -->
+      <div class="card">
+        <div class="card-title">📐 解析度與選項</div>
+        
+        <div class="control-group">
+          <label class="control-label" for="resolutionMode">解析度調整策略</label>
+          <select id="resolutionMode" class="select">
+            <option value="original">維持原解析度（超標時自動縮小）</option>
+            <option value="long">限制最長邊像素</option>
+            <option value="exact">指定寬高尺寸上限</option>
+            <option value="percent">等比例百分比縮放</option>
+          </select>
+        </div>
+
+        <div id="longSideGroup" class="control-group" hidden>
+          <label class="control-label" for="longSide">最長邊上限 (px)</label>
+          <input id="longSide" class="input" type="number" min="100" step="10" value="1920">
+        </div>
+
+        <div id="exactGroup" class="control-group" hidden>
+          <label class="control-label">寬度 × 高度上限 (px)</label>
+          <div class="size-pair">
+            <input id="targetWidth" class="input" type="number" min="100" value="1920">
+            <span>×</span>
+            <input id="targetHeight" class="input" type="number" min="100" value="1080">
+          </div>
+          <div class="field-hint">維持原始比例，不拉伸、不裁切</div>
+        </div>
+
+        <div id="percentGroup" class="control-group" hidden>
+          <label class="control-label" for="scalePercent">縮放比例 (%)</label>
+          <input id="scalePercent" class="input" type="number" min="5" max="100" value="80">
+        </div>
+
+        <div class="switch-list">
+          <label class="switch-item">
+            <span>保留原始主檔名</span>
+            <div class="switch">
+              <input id="keepName" type="checkbox" checked>
+              <span class="slider"></span>
+            </div>
+          </label>
+          <label class="switch-item">
+            <span>小於目標時保留原檔</span>
+            <div class="switch">
+              <input id="skipSmall" type="checkbox" checked disabled>
+              <span class="slider"></span>
+            </div>
+          </label>
+          <label class="switch-item">
+            <span>色彩優先模式（JPEG 原圖維持 JPEG）</span>
+            <div class="switch">
+              <input id="colorPriority" type="checkbox" checked>
+              <span class="slider"></span>
+            </div>
+          </label>
+        </div>
+
+        <!-- Buttons -->
+        <div class="btn-grid">
+          <button type="button" id="compressBtn" class="btn primary" disabled>▶ 開始批次壓縮</button>
+          <div class="btn-row">
+            <button type="button" id="cancelBtn" class="btn danger" disabled>取消處理</button>
+            <button type="button" id="downloadAllBtn" class="btn secondary" disabled>📦 下載 ZIP</button>
+          </div>
+          <button type="button" id="clearBtn" class="btn secondary" disabled>清空清單</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Column: Dropzone, Stats & Image List -->
+    <main>
+      <!-- Upload Dropzone -->
+      <section class="card" style="padding: 12px;">
+        <div id="drop" class="dropzone" tabindex="0" role="button" aria-label="選取或拖曳圖片">
+          <div class="dropzone-icon">📥</div>
+          <div class="dropzone-title">拖曳圖片至此，或點擊選取</div>
+          <div class="dropzone-desc">支援 JPG、PNG、WebP、BMP、AVIF 等常見格式</div>
+          <div class="dropzone-hint">💡 亦支援直接以 Ctrl + V 貼上截圖</div>
+        </div>
+        <input id="fileInput" type="file" accept="image/*" multiple style="display:none;">
+      </section>
+
+      <!-- Stats Overview -->
+      <div id="statsBanner" class="stats-banner" style="display:none;">
+        <div class="stat-box">
+          <div class="stat-box-label">圖片總數</div>
+          <div id="statTotalCount" class="stat-box-val">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-label">壓縮前總量</div>
+          <div id="statOriginalSize" class="stat-box-val">0 KB</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-label">壓縮後總量</div>
+          <div id="statCompressedSize" class="stat-box-val">-</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-label">節省空間</div>
+          <div id="statSavedPercent" class="stat-box-val saved">-</div>
+        </div>
+      </div>
+
+      <!-- Overall Progress -->
+      <div id="overall" class="progress-card" hidden role="status" aria-live="polite">
+        <div class="progress-head">
+          <span id="progressText">處理中...</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div id="overallBar" class="progress-bar-fill"></div>
+        </div>
+      </div>
+
+      <!-- File List Card -->
+      <section class="card">
+        <div class="list-head">
+          <h2>待處理與完成清單</h2>
+          <span id="listCounter" style="font-size: 13px; color: var(--text-muted);">尚未加入圖片</span>
+        </div>
+        <div id="list" class="list-items">
+          <div class="empty-state">
+            <div class="empty-icon">🖼️</div>
+            <div>目前尚無圖片，請於上方拖曳或選取圖片開始</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- Modal: Preview Comparison -->
+<div id="previewModal" class="modal" hidden>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="previewTitle">壓縮品質比較</h3>
+      <button type="button" id="closePreview" class="btn-icon">✕ 關閉</button>
+    </div>
+    <div class="modal-body">
+      <div class="mode-tabs">
+        <button type="button" id="sideMode" class="tab-btn active">並排對照</button>
+        <button type="button" id="slideMode" class="tab-btn">滑桿裁切對照</button>
+      </div>
+
+      <!-- Side-by-side -->
+      <div id="sideCompare" class="compare-grid">
+        <div class="preview-panel">
+          <div class="preview-label-bar">
+            <span>原始圖片</span>
+            <span id="originalInfo"></span>
+          </div>
+          <div class="preview-img-wrap">
+            <img id="originalPreview" alt="原圖">
+          </div>
+        </div>
+        <div class="preview-panel">
+          <div class="preview-label-bar">
+            <span>壓縮成果</span>
+            <span id="compressedInfo"></span>
+          </div>
+          <div class="preview-img-wrap">
+            <img id="compressedPreview" alt="壓縮後">
+          </div>
+        </div>
+      </div>
+
+      <!-- Slider Compare -->
+      <div id="slideCompare" hidden>
+        <div class="slider-container">
+          <img id="slideOriginal" alt="原圖">
+          <img id="slideCompressed" class="slider-after" alt="壓縮後">
+        </div>
+        <div class="slider-range-bar">
+          <input id="compareSlider" type="range" min="0" max="100" value="50" aria-label="滑動裁切位置">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const list = $('#list'), input = $('#fileInput'), drop = $('#drop');
+let items = [], targetKB = 200, running = false, cancelled = false, currentIndex = -1;
+
+const fmtBytes = n => {
+  if (n < 1024) return `${n} B`;
+  if (n < 1048576) return `${(n / 1024).toFixed(n < 10240 ? 1 : 0)} KB`;
+  return `${(n / 1048576).toFixed(2)} MB`;
+};
+
+const escapeHtml = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const stem = n => n.replace(/\.[^.]+$/, '');
+const ext = n => (n.match(/\.([^.]+)$/)?.[1] || '').toLowerCase();
+
+function getTargetKB() {
+  if (targetKB !== 'custom') return targetKB;
+  const value = Number($('#customSize').value);
+  const unit = Number($('#customUnit').value);
+  if (!Number.isFinite(value) || value <= 0 || !Number.isFinite(unit)) return null;
+  return value * unit;
+}
+function hasResolutionChange() {
+  return $('#resolutionMode').value !== 'original';
+}
+function friendlyError(error) {
+  if (error?.message === 'CANCELLED') return '已取消';
+  if (error?.message === 'CANVAS_LIMIT') return '圖片解析度過大，請先限制最長邊';
+  return '失敗：' + (error?.message || '未知錯誤');
+}
+
+function progress(done, total, label) {
+  const pct = total ? Math.round(done / total * 100) : 0;
+  $('#overall').hidden = false;
+  $('#overallBar').style.width = pct + '%';
+  $('#progressPercent').textContent = pct + '%';
+  $('#progressText').textContent = label;
+}
+
+function update() {
+  $('#compressBtn').disabled = !items.length || running;
+  $('#cancelBtn').disabled = !running;
+  $('#clearBtn').disabled = !items.length || running;
+  $('#downloadAllBtn').disabled = !items.some(x => x.blob) || running;
+
+  if (!items.length) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🖼️</div>
+        <div>目前尚無圖片，請於上方拖曳或選取圖片開始</div>
+      </div>`;
+    $('#listCounter').textContent = '尚未加入圖片';
+    $('#statsBanner').style.display = 'none';
+    return;
+  }
+
+  const done = items.filter(x => x.blob).length;
+  const before = items.reduce((a, x) => a + x.file.size, 0);
+  const after = items.reduce((a, x) => a + (x.blob?.size || 0), 0);
+  const skipped = items.filter(x => x.skipped).length;
+
+  $('#statsBanner').style.display = 'grid';
+  $('#statTotalCount').textContent = `${items.length} 張`;
+  $('#statOriginalSize').textContent = fmtBytes(before);
+  
+  if (done > 0) {
+    $('#statCompressedSize').textContent = fmtBytes(after);
+    const processedBefore = items.filter(x => x.blob).reduce((a, x) => a + x.file.size, 0);
+    const saved = Math.max(0, processedBefore - after);
+    const savedPct = processedBefore ? Math.round((saved / processedBefore) * 100) : 0;
+    $('#statSavedPercent').textContent = `省下 ${savedPct}% (${fmtBytes(saved)})`;
+    $('#listCounter').textContent = `已處理 ${done}/${items.length} 張${skipped ? ` (保留原檔 ${skipped})` : ''}`;
+  } else {
+    $('#statCompressedSize').textContent = '-';
+    $('#statSavedPercent').textContent = '-';
+    $('#listCounter').textContent = `已加入 ${items.length} 張圖片`;
+  }
+
+  list.innerHTML = items.map((x, i) => {
+    let saveBadge = '';
+    if (x.blob && x.blob.size < x.file.size) {
+      const p = Math.round((1 - x.blob.size / x.file.size) * 100);
+      saveBadge = `<span class="badge-save">-${p}%</span>`;
+    }
+
+    return `
+    <div class="item-card">
+      <div class="item-thumb-box">
+        <img class="item-thumb" src="${x.preview}" alt="">
+      </div>
+      <div class="item-info">
+        <div class="item-name" title="${escapeHtml(x.file.name)}">${escapeHtml(x.file.name)}</div>
+        <div class="item-meta">
+          <span>原始：${fmtBytes(x.file.size)}</span>
+          ${x.blob ? `<span>→ 輸出：<b>${fmtBytes(x.blob.size)}</b></span>${saveBadge}` : ''}
+          ${x.width ? `<span>(${x.width} ×${x.height})</span>` : ''}
+        </div>
+        <div class="item-status-text ${['完成','保留原檔'].includes(x.state) ? 'ok' : (x.state==='已取消' || x.state?.startsWith('已盡量')) ? 'warn' : x.state?.startsWith('失敗') ? 'danger' : ''}">
+          ${x.state || '等待處理'}
+        </div>
+        ${x.state === '壓縮中' ? `
+          <div class="item-progress">
+            <div class="progress-bar-fill" style="width: ${x.progress || 0}%"></div>
+          </div>` : ''}
+      </div>
+      <div class="item-actions">
+        ${x.blob ? `
+          ${x.skipped ? '' : `<button type="button" class="btn-icon" onclick="previewOne(${i})" title="對照檢視">🔍 比較</button>`}
+          <button type="button" class="btn-icon" onclick="downloadOne(${i})" title="單張下載">💾 下載</button>
+        ` : ''}
+        <button type="button" class="btn-icon danger" onclick="removeOne(${i})" ${running ? 'disabled' : ''} title="移除">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addFiles(fs) {
+  const known = new Set(items.map(x => `${x.file.name}|${x.file.size}|${x.file.lastModified}`));
+  for (const file of fs) {
+    if (!file.type.startsWith('image/')) continue;
+    const key = `${file.name}|${file.size}|${file.lastModified}`;
+    if (known.has(key)) continue;
+    known.add(key);
+    items.push({
+      file,
+      preview: URL.createObjectURL(file),
+      state: '等待處理',
+      progress: 0
+    });
+  }
+  update();
+}
+
+/* Event Listeners */
+drop.onclick = () => input.click();
+drop.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } };
+input.onchange = e => { addFiles(e.target.files); input.value = ''; };
+
+['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => {
+  e.preventDefault();
+  drop.classList.add('drag');
+}));
+['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => {
+  e.preventDefault();
+  drop.classList.remove('drag');
+}));
+drop.addEventListener('drop', e => addFiles(e.dataTransfer.files));
+
+// Clipboard Paste
+window.addEventListener('paste', e => {
+  const pasteFiles = Array.from(e.clipboardData?.files || []).filter(f => f.type.startsWith('image/'));
+  if (pasteFiles.length) addFiles(pasteFiles);
+});
+
+// Presets Chips
+document.querySelectorAll('.chip').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  targetKB = b.dataset.kb === 'custom' ? 'custom' : +b.dataset.kb;
+  const isCustom = targetKB === 'custom';
+  $('#customRow').style.display = isCustom ? 'grid' : 'none';
+  if (isCustom) $('#customSize').focus();
+});
+
+// Resolution Select Handlers
+function updateResolutionControls() {
+  const m = $('#resolutionMode').value;
+  $('#longSideGroup').hidden = m !== 'long';
+  $('#exactGroup').hidden = m !== 'exact';
+  $('#percentGroup').hidden = m !== 'percent';
+}
+$('#resolutionMode').onchange = updateResolutionControls;
+updateResolutionControls();
+
+function initialScale(w, h) {
+  const m = $('#resolutionMode').value;
+  if (m === 'long') {
+    const v = Math.max(100, +$('#longSide').value || 1920);
+    return Math.min(1, v / Math.max(w, h));
+  }
+  if (m === 'exact') {
+    const tw = Math.max(100, +$('#targetWidth').value || 1920);
+    const th = Math.max(100, +$('#targetHeight').value || 1080);
+    return Math.min(1, tw / w, th / h);
+  }
+  if (m === 'percent') {
+    return Math.min(1, Math.max(0.05, (+$('#scalePercent').value || 80) / 100));
+  }
+  return 1;
+}
+
+function loadImage(file) {
+  return new Promise((res, rej) => {
+    const im = new Image(), u = URL.createObjectURL(file);
+    im.onload = () => { URL.revokeObjectURL(u); res(im); };
+    im.onerror = () => { URL.revokeObjectURL(u); rej(Error('無法讀取圖片')); };
+    im.src = u;
+  });
+}
+
+function canvasBlob(c, t, q) {
+  return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(Error('不支援輸出格式')), t, q));
+}
+
+async function compress(file, target, type, onProgress) {
+  const img = await loadImage(file);
+  let ow = img.naturalWidth, oh = img.naturalHeight, scale = initialScale(ow, oh), best = null, bw = ow, bh = oh;
+  const maxPixels = 32000000;
+  if (ow * oh * scale * scale > maxPixels) scale = Math.min(scale, Math.sqrt(maxPixels / (ow * oh))); 
+
+  for (let r = 0; r < 12; r++) {
+    if (cancelled) throw Error('CANCELLED');
+    const w = Math.max(1, Math.round(ow * scale));
+    const h = Math.max(1, Math.round(oh * scale));
+    const c = document.createElement('canvas');
+    try { c.width = w; c.height = h; } catch (_) { throw Error('CANVAS_LIMIT'); }
+    const alpha = type !== 'image/jpeg';
+    let ctx;
+    try {
+      ctx = c.getContext('2d', { alpha, colorSpace: 'srgb', willReadFrequently: false });
+    } catch (_) {
+      ctx = c.getContext('2d', { alpha });
+    }
+    if (!ctx) throw Error('無法建立繪圖環境');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    if (!alpha) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+    }
+    ctx.drawImage(img, 0, 0, w, h);
+
+    let lo = 0.05, hi = 0.95, fit = null;
+    for (let k = 0; k < 9; k++) {
+      if (cancelled) throw Error('CANCELLED');
+      let q = (lo + hi) / 2;
+      let b = await canvasBlob(c, type, q);
+      if (b.size <= target) { fit = b; lo = q; } else { hi = q; }
+      onProgress(Math.min(98, Math.round(((r * 9 + k + 1) / (12 * 9)) * 100)));
+      await new Promise(z => setTimeout(z, 0));
+    }
+
+    if (fit) return { blob: fit, width: w, height: h, met: true };
+    let low = await canvasBlob(c, type, 0.05);
+    if (!best || low.size < best.size) { best = low; bw = w; bh = h; }
+    scale *= Math.max(0.55, Math.min(0.88, Math.sqrt(target / low.size) * 0.95));
+  }
+  return { blob: best, width: bw, height: bh, met: Boolean(best && best.size <= target) };
+}
+
+/* Batch Processing */
+$('#compressBtn').onclick = async () => {
+  running = true;
+  cancelled = false;
+  currentIndex = -1;
+  const targetKBValue = getTargetKB();
+  if (!targetKBValue) {
+    running = false;
+    alert('請輸入有效的目標容量。');
+    update();
+    return;
+  }
+  const target = Math.round(targetKBValue * 1024);
+  const type = $('#format').value;
+
+  items.forEach(x => { x.blob = null; x.state = '等待處理'; x.progress = 0; x.skipped = false; });
+  update();
+  progress(0, items.length, `準備開始處理 ${items.length} 張圖片`);
+
+  for (let i = 0; i < items.length; i++) {
+    currentIndex = i;
+    const x = items[i];
+    if (cancelled) { x.state = '已取消'; continue; }
+
+    if (x.file.size <= target && !hasResolutionChange()) {
+      x.blob = x.file;
+      x.type = x.file.type;
+      x.downloadName = x.file.name;
+      x.skipped = true;
+      x.state = '保留原檔';
+      x.progress = 100;
+      progress(i + 1, items.length, `第 ${i + 1}/${items.length} 張：已小於目標，保留原檔`);
+      update();
+      continue;
+    }
+
+    x.state = '壓縮中';
+    update();
+
+    try {
+      let r, chosenType = type;
+      if (type === 'auto' && $('#colorPriority').checked && /image\/jpe?g/i.test(x.file.type)) {
+        r = await compress(x.file, target, 'image/jpeg', p => {
+          x.progress = p;
+          progress(i + p / 100, items.length, `色彩優先 JPEG：第 ${i + 1}/${items.length} 張`);
+          update();
+        });
+        chosenType = 'image/jpeg';
+      } else if (type === 'auto') {
+        const webp = await compress(x.file, target, 'image/webp', p => {
+          x.progress = Math.round(p / 2);
+          progress(i + x.progress / 100, items.length, `比較 WebP：第 ${i + 1}/${items.length} 張`);
+          update();
+        });
+        if (cancelled) throw Error('CANCELLED');
+        const jpeg = await compress(x.file, target, 'image/jpeg', p => {
+          x.progress = 50 + Math.round(p / 2);
+          progress(i + x.progress / 100, items.length, `比較 JPEG：第 ${i + 1}/${items.length} 張`);
+          update();
+        });
+        if (webp.blob.size <= jpeg.blob.size) { r = webp; chosenType = 'image/webp'; }
+        else { r = jpeg; chosenType = 'image/jpeg'; }
+      } else {
+        r = await compress(x.file, target, type, p => {
+          x.progress = p;
+          progress(i + p / 100, items.length, `壓縮中：第 ${i + 1}/${items.length} 張`);
+          update();
+        });
+      }
+
+      x.blob = r.blob;
+      x.width = r.width;
+      x.height = r.height;
+      x.type = chosenType;
+      x.progress = 100;
+      x.state = r.met ? '完成' : '已盡量壓縮，仍高於目標';
+      const suffix = chosenType === 'image/webp' ? 'webp' : 'jpg';
+      x.downloadName = $('#keepName').checked ? `${stem(x.file.name)}.${suffix}` : `${stem(x.file.name)}_${Math.round(targetKBValue)}KB.${suffix}`;
+    } catch (e) {
+      x.state = friendlyError(e);
+    }
+    progress(i + 1, items.length, cancelled ? '正在取消…' : `已處理 ${i + 1}/${items.length} 張`);
+    update();
+  }
+
+  if (cancelled) items.forEach((x, i) => { if (i > currentIndex && !x.blob) x.state = '已取消'; });
+  running = false;
+  currentIndex = -1;
+  progress(items.filter(x => x.blob).length, items.length, cancelled ? '已取消作業' : '🎉 全部批次處理完成');
+  update();
+};
+
+$('#cancelBtn').onclick = () => {
+  cancelled = true;
+  $('#cancelBtn').disabled = true;
+  $('#progressText').textContent = '正在取消，請稍候…';
+};
+
+window.downloadOne = i => {
+  const x = items[i];
+  if (!x?.blob) return;
+  const a = document.createElement('a'), u = URL.createObjectURL(x.blob);
+  a.href = u;
+  a.download = x.downloadName || x.file.name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 1500);
+};
+
+window.removeOne = i => {
+  URL.revokeObjectURL(items[i].preview);
+  items.splice(i, 1);
+  update();
+};
+
+/* ZIP Packaging Engine */
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (const b of bytes) {
+    c ^= b;
+    for (let k = 0; k < 8; k++) c = (c >>> 1) ^ ((c & 1) ? 0xedb88320 : 0);
+  }
+  return (c ^ 0xffffffff) >>> 0;
+}
+function u16(n) { return [n & 255, (n >>> 8) & 255]; }
+function u32(n) { return [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255]; }
+
+async function makeZip(files, onProgress) {
+  const enc = new TextEncoder(), parts = [], central = [];
+  let offset = 0;
+  const now = new Date();
+  const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+  const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+
+  for (let i = 0; i < files.length; i++) {
+    if (cancelled) throw Error('CANCELLED');
+    const f = files[i], name = enc.encode(f.name);
+    const data = new Uint8Array(await f.blob.arrayBuffer());
+    const crc = crc32(data);
+    const local = new Uint8Array([
+      ...u32(0x04034b50), ...u16(20), ...u16(0x0800), ...u16(0),
+      ...u16(dosTime), ...u16(dosDate), ...u32(crc),
+      ...u32(data.length), ...u32(data.length), ...u16(name.length), ...u16(0), ...name
+    ]);
+    parts.push(local, data);
+    central.push(new Uint8Array([
+      ...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0),
+      ...u16(dosTime), ...u16(dosDate), ...u32(crc),
+      ...u32(data.length), ...u32(data.length), ...u16(name.length),
+      ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(offset), ...name
+    ]));
+    offset += local.length + data.length;
+    onProgress(i + 1, files.length);
+    await new Promise(r => setTimeout(r, 0));
+  }
+  const centralSize = central.reduce((a, b) => a + b.length, 0);
+  const end = new Uint8Array([
+    ...u32(0x06054b50), ...u16(0), ...u16(0),
+    ...u16(files.length), ...u16(files.length),
+    ...u32(centralSize), ...u32(offset), ...u16(0)
+  ]);
+  return new Blob([...parts, ...central, end], { type: 'application/zip' });
+}
+
+function uniqueFiles() {
+  const used = new Map();
+  return items.filter(x => x.blob).map(x => {
+    let n = x.downloadName || x.file.name;
+    if (used.has(n)) {
+      const count = used.get(n) + 1;
+      used.set(n, count);
+      const dot = n.lastIndexOf('.');
+      n = dot > 0 ? `${n.slice(0, dot)}_${count}${n.slice(dot)}` : `${n}_${count}`;
+    } else used.set(n, 1);
+    return { name: n, blob: x.blob };
+  });
+}
+
+$('#downloadAllBtn').onclick = async () => {
+  const files = uniqueFiles();
+  if (!files.length) return;
+  if (files.length > 65535) { alert('單次 ZIP 最多支援 65,535 個檔案。'); return; }
+  cancelled = false;
+  running = true;
+  update();
+  $('#cancelBtn').disabled = false;
+  progress(0, files.length, '正在打包 ZIP 檔案中...');
+
+  try {
+    const zip = await makeZip(files, (d, t) => progress(d, t, `正在打包 ${d}/${t} 個檔案`));
+    const a = document.createElement('a'), u = URL.createObjectURL(zip);
+    a.href = u;
+    a.download = `compressed-images-${new Date().toISOString().slice(0, 10)}.zip`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(u), 2000);
+    progress(files.length, files.length, 'ZIP 打包完成並已啟動下載');
+  } catch (e) {
+    progress(0, files.length, e.message === 'CANCELLED' ? '已取消建立 ZIP' : 'ZIP 打包失敗');
+  }
+  running = false;
+  update();
+};
+
+/* Preview Modal */
+let previewURLs = [];
+function clearPreviewURLs() {
+  previewURLs.forEach(URL.revokeObjectURL);
+  previewURLs = [];
+}
+
+window.previewOne = i => {
+  const x = items[i];
+  if (!x?.blob) return;
+  clearPreviewURLs();
+  const a = URL.createObjectURL(x.file), b = URL.createObjectURL(x.blob);
+  previewURLs = [a, b];
+  $('#previewTitle').textContent = `對比檢視：${x.file.name}`;
+  $('#originalPreview').src = $('#slideOriginal').src = a;
+  $('#compressedPreview').src = $('#slideCompressed').src = b;
+  $('#originalInfo').textContent = fmtBytes(x.file.size);
+  $('#compressedInfo').textContent = `${fmtBytes(x.blob.size)} · ${x.skipped ? '保留原檔' : x.type === 'image/webp' ? 'WebP' : 'JPEG'}${x.width ? ` · ${x.width}×${x.height}` : ''}`;
+  $('#compareSlider').value = 50;
+  $('#slideCompressed').style.clipPath = 'inset(0 50% 0 0)';
+  $('#previewModal').hidden = false;
+  document.body.style.overflow = 'hidden';
+};
+
+function closePreview() {
+  clearPreviewURLs();
+  $('#previewModal').hidden = true;
+  document.body.style.overflow = '';
+}
+$('#closePreview').onclick = closePreview;
+$('#previewModal').onclick = e => { if (e.target === $('#previewModal')) closePreview(); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#previewModal').hidden) closePreview(); });
+
+$('#sideMode').onclick = () => {
+  $('#sideCompare').hidden = false;
+  $('#slideCompare').hidden = true;
+  $('#sideMode').classList.add('active');
+  $('#slideMode').classList.remove('active');
+};
+$('#slideMode').onclick = () => {
+  $('#sideCompare').hidden = true;
+  $('#slideCompare').hidden = false;
+  $('#slideMode').classList.add('active');
+  $('#sideMode').classList.remove('active');
+};
+$('#compareSlider').oninput = e => {
+  $('#slideCompressed').style.clipPath = `inset(0 ${100 - e.target.value}% 0 0)`;
+};
+
+$('#clearBtn').onclick = () => {
+  clearPreviewURLs();
+  items.forEach(x => URL.revokeObjectURL(x.preview));
+  items = [];
+  $('#overall').hidden = true;
+  update();
+};
+
+// Initial run
+update();
+</script>
+</body>
+</html>
